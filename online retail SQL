@@ -1,0 +1,38 @@
+-- Remove rows with missing values
+DELETE FROM retail_table WHERE Description IS NULL OR CustomerID IS NULL;
+
+-- Remove sales with negative or zero quantity
+DELETE FROM retail_table WHERE Quantity <= 0;
+
+-- Remove sales with negative or zero unit price
+DELETE FROM retail_table WHERE UnitPrice <= 0;
+
+
+SELECT CustomerID,
+       SUM(Totalsale) AS TotalRevenue,
+       COUNT(DISTINCT InvoiceNo) AS TotalOrders,
+       (SUM(Totalsale) / COUNT(DISTINCT InvoiceNo)) * AVG(LifetimePeriod) AS CustomerLifetimeValue
+FROM SalesData
+GROUP BY CustomerID;
+
+SELECT COUNT(DISTINCT CustomerID) AS TotalCustomers,
+       COUNT(DISTINCT CustomerID) FILTER (WHERE TotalOrders > 1) AS RepeatCustomers,
+       (CAST(RepeatCustomers AS FLOAT) / CAST(TotalCustomers AS FLOAT)) * 100 AS RepeatPurchaseRate
+FROM (SELECT CustomerID, COUNT(DISTINCT InvoiceNo) AS TotalOrders FROM SalesData GROUP BY CustomerID) AS CustomerOrders;
+
+SELECT COUNT(DISTINCT CustomerID) AS TotalCustomers,
+       COUNT(DISTINCT CustomerID) FILTER (WHERE TotalOrders > 1) AS RepeatCustomers,
+       (CAST(RepeatCustomers AS FLOAT) / CAST(TotalCustomers AS FLOAT)) * 100 AS RepeatPurchaseRate
+FROM (SELECT CustomerID, COUNT(DISTINCT InvoiceNo) AS TotalOrders FROM SalesData GROUP BY CustomerID) AS CustomerOrders;
+
+SELECT AVG(Totalsale) AS AverageOrderValue
+FROM (SELECT InvoiceNo, SUM(Totalsale) AS Totalsale FROM SalesData GROUP BY InvoiceNo) AS InvoiceTotals;
+-- Assuming you have a 'Cost' field to calculate profit
+SELECT (SUM(Totalsale) - SUM(Cost)) / SUM(Totalsale) * 100 AS ProfitMargin
+FROM SalesData;
+SELECT StockCode,
+       SUM(Quantity) AS TotalSold,
+       AVG(StockOnHand) AS AverageStock,
+       (CAST(TotalSold AS FLOAT) / CAST(AverageStock AS FLOAT)) AS StockTurnoverRate
+FROM SalesData
+GROUP BY StockCode;
